@@ -1,0 +1,103 @@
+﻿#root {
+  margin: 0;
+  padding: 20px;
+}
+
+.app {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+
+.table-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.table {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 100%;
+}
+
+.table-header {
+  display: flex;
+  background-color: #fdcecf;
+  border-bottom: 1px solid #ccc;
+  color: black;
+  position: relative;
+  width: 100%;
+}
+
+.table-body {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.table-row {
+  display: flex;
+  border-bottom: 1px solid #ccc;
+  width: 100%;
+}
+
+.table-row:last-child {
+  border-bottom: none;
+}
+
+.header-cell,
+.table-cell {
+  padding: 10px;
+  min-width: 120px;
+  flex: 1;
+  border-right: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
+.label-cell {
+  background-color: #7fffc7;
+  min-width: 120px;
+  width: 120px;
+  flex: 0 0 120px;
+  color: black;
+  box-sizing: border-box;
+  padding: 10px;
+  border-right: 1px solid #ccc;
+}
+
+.table-cell input {
+  width: 100%;
+  border: none;
+  padding: 5px;
+  outline: none;
+  background: transparent;
+}
+
+button {
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: #333;
+  color: white;
+  min-width: 120px;
+  padding: 10px;
+  box-sizing: border-box;
+  height: 41px;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+.add-column {
+  position: absolute;
+  right: -120px;
+  top: 0;
+}
+
+.add-row {
+  position: absolute;
+  right: -120px;
+  bottom: 0;
+}
