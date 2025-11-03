@@ -9,6 +9,14 @@
   padding: 20px;
 }
 
+.table-cell.selected {
+  background-color: rgba(0, 123, 255, 0.1);
+}
+
+.table-cell.selected input {
+  background-color: transparent;
+}
+
 .table-container {
   position: relative;
   display: flex;
