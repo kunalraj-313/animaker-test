@@ -4,6 +4,7 @@ import TableRow from './TableRow';
 
 function Table() {
   const tableRef = useRef(null);
+  const [copiedCells, setCopiedCells] = useState(null);
   const [headers, setHeaders] = useState(['Head 1', 'Head 2', 'Head 3', 'Head 4']);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedCells, setSelectedCells] = useState({});
@@ -14,22 +15,24 @@ function Table() {
     { id: 4, label: 'Label 4', cells: ['', '', '', ''] },
   ]);
 
-  const addColumn = () => {
-    setHeaders([...headers, `Head ${headers.length + 1}`]);
-    setRows(rows.map(row => ({
+  const addColumn = useCallback(() => {
+    setHeaders(prevHeaders => [...prevHeaders, `Head ${prevHeaders.length + 1}`]);
+    setRows(prevRows => prevRows.map(row => ({
       ...row,
       cells: [...row.cells, '']
     })));
-  };
+  }, []);
 
-  const addRow = () => {
-    const newRow = {
-      id: rows.length + 1,
-      label: `Label ${rows.length + 1}`,
-      cells: Array(headers.length).fill('')
-    };
-    setRows([...rows, newRow]);
-  };
+  const addRow = useCallback(() => {
+    setRows(prevRows => {
+      const newRow = {
+        id: prevRows.length + 1,
+        label: `Label ${prevRows.length + 1}`,
+        cells: Array(headers.length).fill('')
+      };
+      return [...prevRows, newRow];
+    });
+  }, [headers.length]);
 
   const updateCell = (rowIndex, cellIndex, value) => {
     const newRows = [...rows];
@@ -62,15 +65,13 @@ function Table() {
 
   const handleCellHover = useCallback((rowIndex, cellIndex) => {
     if (isDragging && dragStartCell) {
-      setSelectedCells(prev => {
+      setSelectedCells(() => {
         const next = {};
-        // Get the range of cells to select
         const startRow = Math.min(dragStartCell.row, rowIndex);
         const endRow = Math.max(dragStartCell.row, rowIndex);
         const startCol = Math.min(dragStartCell.col, cellIndex);
         const endCol = Math.max(dragStartCell.col, cellIndex);
 
-        // Select all cells in the rectangle and store their data
         for (let r = startRow; r <= endRow; r++) {
           for (let c = startCol; c <= endCol; c++) {
             const cellKey = `${r}-${c}`;
@@ -87,6 +88,95 @@ function Table() {
     }
   }, [isDragging, dragStartCell, rows]);
 
+  const getSelectedRange = useCallback(() => {
+    if (Object.keys(selectedCells).length === 0) return null;
+
+    const positions = Object.values(selectedCells);
+    const rowIndices = positions.map(pos => pos.rowIndex);
+    const colIndices = positions.map(pos => pos.cellIndex);
+
+    return {
+      startRow: Math.min(...rowIndices),
+      endRow: Math.max(...rowIndices),
+      startCol: Math.min(...colIndices),
+      endCol: Math.max(...colIndices),
+    };
+  }, [selectedCells]);
+
+  const handleCopy = useCallback(async (e) => {
+    if (!(e.ctrlKey || e.metaKey) || e.key !== 'c') return;
+    if (Object.keys(selectedCells).length === 0) return;
+
+    const range = getSelectedRange();
+    if (!range) return;
+
+    e.preventDefault();
+
+    const matrix = [];
+    for (let i = range.startRow; i <= range.endRow; i++) {
+      const row = [];
+      for (let j = range.startCol; j <= range.endCol; j++) {
+        const cellData = selectedCells[`${i}-${j}`];
+        row.push(cellData ? cellData.value : '');
+      }
+      matrix.push(row);
+    }
+
+    // Store for internal paste operationsx
+    const selectedData = {
+      range,
+      cells: Object.entries(selectedCells).map(([key, data]) => ({
+        key,
+        ...data
+      }))
+    };
+    setCopiedCells(selectedData);
+
+    const clipboardText = matrix.map(row => row.join('\t')).join('\n');
+    
+    try {
+      await navigator.clipboard.writeText(clipboardText);
+      console.log('Copied to clipboard');
+    } catch (err) {
+      console.error('Failed to copy to clipboard:', err);
+    }
+  }, [selectedCells, getSelectedRange]);
+
+  const handlePaste = useCallback(async (e) => {
+    if (!(e.ctrlKey || e.metaKey) || e.key !== 'v' || !dragStartCell) return;
+    e.preventDefault();
+
+    try {
+      const clipboardText = await navigator.clipboard.readText();
+      const pasteData = clipboardText
+        .trim()
+        .split('\n')
+        .map(row => row.trim().split('\t'));
+
+      setRows(prevRows => {
+        const newRows = [...prevRows];
+        const targetRow = dragStartCell.row;
+        const targetCol = dragStartCell.col;
+
+        pasteData.forEach((rowData, rowOffset) => {
+          const newRowIndex = targetRow + rowOffset;
+          if (newRowIndex < newRows.length) {
+            rowData.forEach((value, colOffset) => {
+              const newColIndex = targetCol + colOffset;
+              if (newColIndex < headers.length) {
+                newRows[newRowIndex].cells[newColIndex] = value.trim();
+              }
+            });
+          }
+        });
+
+        return newRows;
+      });
+    } catch (err) {
+      console.error('Failed to paste:', err);
+    }
+  }, [dragStartCell, headers.length]);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (tableRef.current && !tableRef.current.contains(event.target)) {
@@ -94,12 +184,24 @@ function Table() {
       }
     };
 
+    const handleKeyDown = (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === 'c') {
+          handleCopy(e);
+        } else if (e.key === 'v') {
+          handlePaste(e);
+        }
+      }
+    };
+
     document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, [handleCopy, handlePaste]);
 
   return (
     <div className="table-container" ref={tableRef}>
