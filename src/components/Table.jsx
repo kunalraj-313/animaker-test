@@ -3,17 +3,33 @@ import TableHeader from './TableHeader';
 import TableRow from './TableRow';
 
 const Table = memo(function Table() {
+  const STORAGE_KEY = 'animaker-table-data-v1';
   const tableRef = useRef(null);
-  const [headers, setHeaders] = useState(['Head 1', 'Head 2', 'Head 3', 'Head 4']);
+
+  const defaultHeaders = ['Head 1', 'Head 2', 'Head 3', 'Head 4'];
+  const [headers, setHeaders] = useState(defaultHeaders);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedCells, setSelectedCells] = useState({});
   const [focusedInput, setFocusedInput] = useState(null);
-  const [rows, setRows] = useState([
+  const defaultRows = [
     { id: 1, label: 'Label 1', cells: ['', '', '', ''] },
     { id: 2, label: 'Label 2', cells: ['', '', '', ''] },
     { id: 3, label: 'Label 3', cells: ['', '', '', ''] },
     { id: 4, label: 'Label 4', cells: ['', '', '', ''] },
-  ]);
+  ];
+  const [rows, setRows] = useState(defaultRows);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (parsed?.headers) setHeaders(parsed.headers);
+      if (parsed?.rows) setRows(parsed.rows);
+    // eslint-disable-next-line no-empty
+    } catch {
+    }
+  }, []);
 
   const addColumn = useCallback(() => {
     setHeaders(prevHeaders => [...prevHeaders, `Head ${prevHeaders.length + 1}`]);
@@ -95,6 +111,14 @@ const Table = memo(function Table() {
     setIsDragging(false);
     console.log('Selected Cells Data:', selectedCells);
   }, [selectedCells]);
+
+  useEffect(() => {
+    try {
+      const data = { headers, rows };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    // eslint-disable-next-line no-empty
+    } catch {}
+  }, [headers, rows]);
 
   const handleCellHover = useCallback((rowIndex, cellIndex) => {
     if (isDragging && dragStartCell) {
