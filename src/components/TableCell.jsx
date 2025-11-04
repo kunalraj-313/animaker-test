@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 
-function TableCell({ value, isSelected, onChange, onMouseDown, onMouseUp, onMouseEnter }) {
+function TableCell({ value, isSelected, isDragStart, onChange, onMouseDown, onMouseUp, onMouseEnter }) {
   const inputRef = useRef(null);
 
   const handleDoubleClick = (e) => {
@@ -31,7 +31,7 @@ function TableCell({ value, isSelected, onChange, onMouseDown, onMouseUp, onMous
 
   return (
     <div 
-      className={`table-cell ${isSelected ? 'selected' : ''}`}
+      className={`table-cell ${isSelected ? 'selected' : ''} ${isDragStart ? 'drag-start' : ''}`}
       onMouseDown={handleContainerMouseDown}
       onMouseUp={onMouseUp}
       onMouseEnter={onMouseEnter}

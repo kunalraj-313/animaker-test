@@ -1,8 +1,6 @@
 import TableCell from './TableCell';
 
-function TableRow({ row, rowIndex, selectedCells, onCellChange, onDragStart, onDragEnd, onCellHover }) {
-
-  
+function TableRow({ row, rowIndex, selectedCells, dragStartCell, onCellChange, onDragStart, onDragEnd, onCellHover }) {
   return (
     <div className="table-row">
       <div className="label-cell">{row.label}</div>
@@ -11,6 +9,7 @@ function TableRow({ row, rowIndex, selectedCells, onCellChange, onDragStart, onD
           key={index}
           value={cell}
           isSelected={`${rowIndex}-${index}` in selectedCells}
+          isDragStart={dragStartCell && dragStartCell.row === rowIndex && dragStartCell.col === index}
           onChange={(value) => onCellChange(index, value)}
           onMouseDown={() => onDragStart(rowIndex, index)}
           onMouseUp={onDragEnd}

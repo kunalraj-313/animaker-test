@@ -4,7 +4,6 @@ import TableRow from './TableRow';
 
 function Table() {
   const tableRef = useRef(null);
-  const [copiedCells, setCopiedCells] = useState(null);
   const [headers, setHeaders] = useState(['Head 1', 'Head 2', 'Head 3', 'Head 4']);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedCells, setSelectedCells] = useState({});
@@ -122,15 +121,7 @@ function Table() {
       matrix.push(row);
     }
 
-    // Store for internal paste operationsx
-    const selectedData = {
-      range,
-      cells: Object.entries(selectedCells).map(([key, data]) => ({
-        key,
-        ...data
-      }))
-    };
-    setCopiedCells(selectedData);
+ 
 
     const clipboardText = matrix.map(row => row.join('\t')).join('\n');
     
@@ -143,7 +134,6 @@ function Table() {
   }, [selectedCells, getSelectedRange]);
 
   const handlePaste = useCallback(async (e) => {
-    // Check if this is triggered by keyboard shortcut
     if (e.type === 'keydown' && (!(e.ctrlKey || e.metaKey) || e.key !== 'v')) {
       return;
     }
@@ -236,6 +226,48 @@ function Table() {
           console.log('Paste key detected',rows)
           handlePaste(e);
         }
+        return;
+      }
+
+      if (dragStartCell) {
+        let newRow = dragStartCell.row;
+        let newCol = dragStartCell.col;
+
+        switch (e.key) {
+          case 'ArrowUp':
+            newRow = Math.max(0, dragStartCell.row - 1);
+            e.preventDefault();
+            break;
+          case 'ArrowDown':
+            newRow = Math.min(rows.length - 1, dragStartCell.row + 1);
+            e.preventDefault();
+            break;
+          case 'ArrowLeft':
+            newCol = Math.max(0, dragStartCell.col - 1);
+            e.preventDefault();
+            break;
+          case 'ArrowRight':
+            newCol = Math.min(headers.length - 1, dragStartCell.col + 1);
+            e.preventDefault();
+            break;
+          case 'Tab':
+            newCol = Math.min(headers.length - 1, dragStartCell.col + 1);
+            if (newCol === dragStartCell.col && !e.shiftKey) {
+              newCol = 0;
+              newRow = Math.min(rows.length - 1, dragStartCell.row + 1);
+            }
+            e.preventDefault();
+            break;
+          case 'Enter':
+            newRow = Math.min(rows.length - 1, dragStartCell.row + 1);
+            e.preventDefault();
+            break;
+        }
+
+        if (newRow !== dragStartCell.row || newCol !== dragStartCell.col) {
+          setDragStartCell({ row: newRow, col: newCol });
+          setSelectedCells({ [`${newRow}-${newCol}`]: { row: newRow, col: newCol, value: rows[newRow].cells[newCol] } });
+        }
       }
     };
 
@@ -248,7 +280,7 @@ function Table() {
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('paste', handlePaste);
     };
-  }, [handleCopy, handlePaste, rows]);
+  }, [handleCopy, handlePaste, rows, dragStartCell, headers.length]);
 
   return (
     <div className="table-container" ref={tableRef}>
@@ -263,6 +295,7 @@ function Table() {
               row={row}
               rowIndex={rowIndex}
               selectedCells={selectedCells}
+              dragStartCell={dragStartCell}
               onCellChange={(cellIndex, value) => updateCell(rowIndex, cellIndex, value)}
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
