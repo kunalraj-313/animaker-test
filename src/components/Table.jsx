@@ -18,6 +18,7 @@ const Table = memo(function Table() {
     { id: 4, label: 'Label 4', cells: ['', '', '', ''] },
   ];
   const [rows, setRows] = useState(defaultRows);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     try {
@@ -26,9 +27,13 @@ const Table = memo(function Table() {
       const parsed = JSON.parse(raw);
       if (parsed?.headers) setHeaders(parsed.headers);
       if (parsed?.rows) setRows(parsed.rows);
-    // eslint-disable-next-line no-empty
+    // mark hydrated on next tick so we don't overwrite storage during initial mount
     } catch {
+      /* ignore parse/storage errors */
     }
+    // ensure hydrated becomes true after this effect finishes (next tick)
+    const t = setTimeout(() => setHydrated(true), 0);
+    return () => clearTimeout(t);
   }, []);
 
   const addColumn = useCallback(() => {
@@ -113,12 +118,14 @@ const Table = memo(function Table() {
   }, [selectedCells]);
 
   useEffect(() => {
+    if (!hydrated) return;
     try {
       const data = { headers, rows };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    // eslint-disable-next-line no-empty
-    } catch {}
-  }, [headers, rows]);
+    } catch {
+      /* ignore storage errors (e.g., quota exceeded or private mode) */
+    }
+  }, [headers, rows, hydrated]);
 
   const handleCellHover = useCallback((rowIndex, cellIndex) => {
     if (isDragging && dragStartCell) {
