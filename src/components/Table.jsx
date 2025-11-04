@@ -178,19 +178,23 @@ const Table = memo(function Table() {
     const range = getSelectedRange();
     if (!range) return null;
 
+ //empty cells handled here
     const matrix = [];
     for (let i = range.startRow; i <= range.endRow; i++) {
       const row = [];
       for (let j = range.startCol; j <= range.endCol; j++) {
-        const cellData = selectedCells[`${i}-${j}`];
-        row.push(cellData ? cellData.value : '');
+        const existsRow = rows[i];
+        const val = existsRow && Array.isArray(existsRow.cells) && typeof existsRow.cells[j] !== 'undefined'
+          ? existsRow.cells[j]
+          : '';
+        row.push(val ?? '');
       }
       matrix.push(row);
     }
 
     const clipboardText = matrix.map(row => row.join('\t')).join('\n');
     return { clipboardText, range, matrix };
-  }, [selectedCells, getSelectedRange]);
+  }, [selectedCells, getSelectedRange, rows]);
 
 
 
