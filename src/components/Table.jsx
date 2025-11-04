@@ -59,7 +59,7 @@ function Table() {
 
   const handleDragEnd = useCallback(() => {
     setIsDragging(false);
-    setDragStartCell(null);
+    // setDragStartCell(null);
     console.log('Selected Cells Data:', selectedCells);
   }, [selectedCells]);
 
@@ -143,7 +143,16 @@ function Table() {
   }, [selectedCells, getSelectedRange]);
 
   const handlePaste = useCallback(async (e) => {
-    if (!(e.ctrlKey || e.metaKey) || e.key !== 'v' || !dragStartCell) return;
+    // Check if this is triggered by keyboard shortcut
+    if (e.type === 'keydown' && (!(e.ctrlKey || e.metaKey) || e.key !== 'v')) {
+      return;
+    }
+    
+    if (!dragStartCell) {
+      console.log('No starting cell for paste');
+      return;
+    }
+    
     e.preventDefault();
 
     try {
@@ -159,6 +168,16 @@ function Table() {
       const targetCol = dragStartCell.col;
       const requiredRows = targetRow + pasteData.length;
       const requiredCols = targetCol + Math.max(...pasteData.map(row => row.length));
+      
+      console.log('Paste operation details:', {
+        targetRow,
+        targetCol,
+        requiredRows,
+        requiredCols,
+        pasteDataLength: pasteData.length,
+        maxPasteDataWidth: Math.max(...pasteData.map(row => row.length))
+      });
+
 
       let currentRows = rows.length;
       while (currentRows < requiredRows) {
@@ -221,6 +240,7 @@ function Table() {
         if (e.key === 'c') {
           handleCopy(e);
         } else if (e.key === 'v') {
+          console.log('Paste key detected',rows)
           handlePaste(e);
         }
       }
@@ -228,12 +248,14 @@ function Table() {
 
     document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('paste', handlePaste);
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('paste', handlePaste);
     };
-  }, [handleCopy, handlePaste]);
+  }, [handleCopy, handlePaste, rows]);
 
   return (
     <div className="table-container" ref={tableRef}>
