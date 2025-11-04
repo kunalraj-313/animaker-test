@@ -178,55 +178,48 @@ function Table() {
         maxPasteDataWidth: Math.max(...pasteData.map(row => row.length))
       });
 
-
-      let currentRows = rows.length;
-      while (currentRows < requiredRows) {
-        setRows(prevRows => {
-          const newRow = {
-            id: prevRows.length + 1,
-            label: `Label ${prevRows.length + 1}`,
-            cells: Array(headers.length).fill('')
-          };
-          return [...prevRows, newRow];
-        });
-        currentRows++;
+      if (requiredCols > headers.length) {
+        const newHeaders = [...headers];
+        for (let i = headers.length; i < requiredCols; i++) {
+          newHeaders.push(`Head ${i + 1}`);
+        }
+        setHeaders(newHeaders);
       }
-
-      let currentCols = headers.length;
-      while (currentCols < requiredCols) {
-        setHeaders(prevHeaders => [...prevHeaders, `Head ${prevHeaders.length + 1}`]);
-        setRows(prevRows => prevRows.map(row => ({
-          ...row,
-          cells: [...row.cells, '']
-        })));
-        currentCols++;
-      }
-
-      console.log('Parsed paste data:', pasteData);
 
       setRows(prevRows => {
         const newRows = [...prevRows];
         
+        while (newRows.length < requiredRows) {
+          newRows.push({
+            id: newRows.length + 1,
+            label: `Label ${newRows.length + 1}`,
+            cells: Array(Math.max(requiredCols, headers.length)).fill('')
+          });
+        }
+        
+        newRows.forEach(row => {
+          while (row.cells.length < requiredCols) {
+            row.cells.push('');
+          }
+        });
+
         pasteData.forEach((rowData, rowOffset) => {
           const newRowIndex = targetRow + rowOffset;
-          
-          if (newRowIndex >= newRows.length) return;
-          
           rowData.forEach((value, colOffset) => {
             const newColIndex = targetCol + colOffset;
-            
-            if (newColIndex >= headers.length) return;
-            
-            newRows[newRowIndex].cells[newColIndex] = value.trim();
-            console.log(`Pasting "${value.trim()}" to [${newRowIndex}, ${newColIndex}]`);
+            if (newRowIndex < requiredRows && newColIndex < requiredCols) {
+              newRows[newRowIndex].cells[newColIndex] = value.trim();
+              console.log(`Pasting "${value.trim()}" to [${newRowIndex}, ${newColIndex}]`);
+            }
           });
         });
+
         return newRows;
       });
     } catch (err) {
       console.error('Failed to paste:', err);
     }
-  }, [dragStartCell, headers.length, rows.length]);
+  }, [dragStartCell, headers]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
