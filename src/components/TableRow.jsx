@@ -11,7 +11,7 @@ function TableRow({ row, rowIndex, selectedCells, dragStartCell, onCellChange, o
           isSelected={`${rowIndex}-${index}` in selectedCells}
           isDragStart={dragStartCell && dragStartCell.row === rowIndex && dragStartCell.col === index}
           onChange={(value) => onCellChange(index, value)}
-          onMouseDown={() => onDragStart(rowIndex, index)}
+          onMouseDown={e => onDragStart(rowIndex, index, e)}
           onMouseUp={onDragEnd}
           onMouseEnter={() => onCellHover(rowIndex, index)}
         />

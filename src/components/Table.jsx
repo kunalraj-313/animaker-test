@@ -40,12 +40,33 @@ function Table() {
   };
 
   const [dragStartCell, setDragStartCell] = useState(null);
+  const [anchorCell, setAnchorCell] = useState(null);
 
-  const handleDragStart = useCallback((rowIndex, cellIndex) => {
-        // console.log('indexed cell hover', rowIndex, cellIndex);
-
+  const handleDragStart = useCallback((rowIndex, cellIndex, e) => {
+    // If shift key is held, select range from anchor to this cell
+    if (e && e.shiftKey && anchorCell) {
+      const startRow = Math.min(anchorCell.row, rowIndex);
+      const endRow = Math.max(anchorCell.row, rowIndex);
+      const startCol = Math.min(anchorCell.col, cellIndex);
+      const endCol = Math.max(anchorCell.col, cellIndex);
+      const next = {};
+      for (let r = startRow; r <= endRow; r++) {
+        for (let c = startCol; c <= endCol; c++) {
+          const cellKey = `${r}-${c}`;
+          next[cellKey] = {
+            rowIndex: r,
+            cellIndex: c,
+            value: rows[r].cells[c],
+          };
+        }
+      }
+      setSelectedCells(next);
+      return;
+    }
     setIsDragging(true);
-    setDragStartCell({ row: rowIndex, col: cellIndex });
+    const newCell = { row: rowIndex, col: cellIndex };
+    setDragStartCell(newCell);
+    setAnchorCell(newCell);
     const cellKey = `${rowIndex}-${cellIndex}`;
     setSelectedCells({
       [cellKey]: {
@@ -54,11 +75,10 @@ function Table() {
         value: rows[rowIndex].cells[cellIndex],
       }
     });
-  }, [rows]);
+  }, [rows, anchorCell]);
 
   const handleDragEnd = useCallback(() => {
     setIsDragging(false);
-    // setDragStartCell(null);
     console.log('Selected Cells Data:', selectedCells);
   }, [selectedCells]);
 

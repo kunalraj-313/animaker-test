@@ -18,14 +18,12 @@ function TableCell({ value, isSelected, isDragStart, onChange, onMouseDown, onMo
 
   const handleContainerMouseDown = (e) => {
     e.preventDefault();
-    
     const wasInputClick = e.target.tagName.toLowerCase() === 'input';
     if (wasInputClick) {
       if (inputRef.current) {
         inputRef.current.blur();
       }
     }
-    
     onMouseDown(e);
   };
 
