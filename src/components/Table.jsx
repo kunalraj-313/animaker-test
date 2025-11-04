@@ -255,10 +255,11 @@ const Table = memo(function Table() {
       const clipboardText = await navigator.clipboard.readText();
       console.log('Raw clipboard data:', clipboardText);
       
-      const pasteData = clipboardText
-        .trim()
-        .split(/\r?\n/) 
-        .map(row => row.trim().split(/\t/));
+    
+      const normalized = clipboardText.replace(/\r/g, '');
+      const pasteData = normalized
+        .split('\n')
+        .map(row => row.split('\t'));
 
       const targetRow = dragStartCell.row;
       const targetCol = dragStartCell.col;
@@ -304,8 +305,9 @@ const Table = memo(function Table() {
           rowData.forEach((value, colOffset) => {
             const newColIndex = targetCol + colOffset;
             if (newRowIndex < requiredRows && newColIndex < requiredCols) {
-              newRows[newRowIndex].cells[newColIndex] = value.trim();
-              console.log(`Pasting "${value.trim()}" to [${newRowIndex}, ${newColIndex}]`);
+              const cellValue = typeof value === 'undefined' ? '' : value;
+              newRows[newRowIndex].cells[newColIndex] = cellValue;
+              console.log(`Pasting "${cellValue}" to [${newRowIndex}, ${newColIndex}]`);
             }
           });
         });
