@@ -1,9 +1,9 @@
-import { useRef } from 'react';
+import { useRef, memo, useCallback } from 'react';
 
-function TableCell({ value, isSelected, isDragStart, onChange, onMouseDown, onMouseUp, onMouseEnter, onInputFocus, onInputBlur }) {
+const TableCell = memo(function TableCell({ value, isSelected, isDragStart, onChange, onMouseDown, onMouseUp, onMouseEnter, onInputFocus, onInputBlur }) {
   const inputRef = useRef(null);
 
-  const handleDoubleClick = (e) => {
+  const handleDoubleClick = useCallback((e) => {
     e.stopPropagation();
     if (inputRef.current) {
       inputRef.current.dataset.allowFocus = 'true';
@@ -14,9 +14,9 @@ function TableCell({ value, isSelected, isDragStart, onChange, onMouseDown, onMo
         }
       }, 0);
     }
-  };
+  }, []);
 
-  const handleContainerMouseDown = (e) => {
+  const handleContainerMouseDown = useCallback((e) => {
     e.preventDefault();
     const wasInputClick = e.target.tagName.toLowerCase() === 'input';
     if (wasInputClick) {
@@ -25,7 +25,7 @@ function TableCell({ value, isSelected, isDragStart, onChange, onMouseDown, onMo
       }
     }
     onMouseDown(e);
-  };
+  }, [onMouseDown]);
 
   return (
     <div 
@@ -36,21 +36,21 @@ function TableCell({ value, isSelected, isDragStart, onChange, onMouseDown, onMo
       onDoubleClick={handleDoubleClick}
     >
       <input
-        onFocus={(e) => {
+        onFocus={useCallback((e) => {
           if (!e.target.dataset.allowFocus) {
             e.target.blur();
           } else {
             onInputFocus?.(inputRef.current);
           }
-        }}
-        onBlur={() => onInputBlur?.(inputRef.current)}
+        }, [onInputFocus])}
+        onBlur={useCallback(() => onInputBlur?.(inputRef.current), [onInputBlur])}
         ref={inputRef}
         type="text"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={useCallback((e) => onChange(e.target.value), [onChange])}
       />
     </div>
   );
-}
+});
 
 export default TableCell;

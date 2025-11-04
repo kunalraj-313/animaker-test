@@ -1,6 +1,19 @@
+import { memo, useCallback } from 'react';
 import TableCell from './TableCell';
 
-function TableRow({ row, rowIndex, selectedCells, dragStartCell, onCellChange, onDragStart, onDragEnd, onCellHover, onInputFocus, onInputBlur }) {
+const TableRow = memo(function TableRow({ row, rowIndex, selectedCells, dragStartCell, onCellChange, onDragStart, onDragEnd, onCellHover, onInputFocus, onInputBlur }) {
+  const handleCellChange = useCallback((index, value) => {
+    onCellChange(index, value);
+  }, [onCellChange]);
+
+  const handleDragStart = useCallback((index, e) => {
+    onDragStart(rowIndex, index, e);
+  }, [onDragStart, rowIndex]);
+
+  const handleCellHover = useCallback((index) => {
+    onCellHover(rowIndex, index);
+  }, [onCellHover, rowIndex]);
+
   return (
     <div className="table-row">
       <div className="label-cell">{row.label}</div>
@@ -10,16 +23,16 @@ function TableRow({ row, rowIndex, selectedCells, dragStartCell, onCellChange, o
           value={cell}
           isSelected={`${rowIndex}-${index}` in selectedCells}
           isDragStart={dragStartCell && dragStartCell.row === rowIndex && dragStartCell.col === index}
-          onChange={(value) => onCellChange(index, value)}
-          onMouseDown={(e) => onDragStart(rowIndex, index, e)}
+          onChange={(value) => handleCellChange(index, value)}
+          onMouseDown={(e) => handleDragStart(index, e)}
           onMouseUp={onDragEnd}
-          onMouseEnter={() => onCellHover(rowIndex, index)}
+          onMouseEnter={() => handleCellHover(index)}
           onInputFocus={onInputFocus}
           onInputBlur={onInputBlur}
         />
       ))}
     </div>
   );
-}
+});
 
 export default TableRow;

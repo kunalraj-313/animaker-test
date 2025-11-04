@@ -1,8 +1,8 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, memo } from 'react';
 import TableHeader from './TableHeader';
 import TableRow from './TableRow';
 
-function Table() {
+const Table = memo(function Table() {
   const tableRef = useRef(null);
   const [headers, setHeaders] = useState(['Head 1', 'Head 2', 'Head 3', 'Head 4']);
   const [isDragging, setIsDragging] = useState(false);
@@ -34,11 +34,20 @@ function Table() {
     });
   }, [headers.length]);
 
-  const updateCell = (rowIndex, cellIndex, value) => {
-    const newRows = [...rows];
-    newRows[rowIndex].cells[cellIndex] = value;
-    setRows(newRows);
-  };
+  const updateCell = useCallback((rowIndex, cellIndex, value) => {
+    setRows(prevRows => {
+      const newRows = [...prevRows];
+      newRows[rowIndex] = {
+        ...newRows[rowIndex],
+        cells: [
+          ...newRows[rowIndex].cells.slice(0, cellIndex),
+          value,
+          ...newRows[rowIndex].cells.slice(cellIndex + 1)
+        ]
+      };
+      return newRows;
+    });
+  }, []);
 
   const [dragStartCell, setDragStartCell] = useState(null);
   const [anchorCell, setAnchorCell] = useState(null);
@@ -354,6 +363,14 @@ function Table() {
     };
   }, [handleCopy, handleCut, handlePaste, rows, dragStartCell, headers.length, focusedInput]);
 
+  const handleInputFocus = useCallback((input) => {
+    setFocusedInput(input);
+  }, []);
+
+  const handleInputBlur = useCallback(() => {
+    setFocusedInput(null);
+  }, []);
+
   return (
     <div className="table-container" ref={tableRef}>
       <button onClick={addColumn} className="add-column">Add Column</button>
@@ -372,15 +389,15 @@ function Table() {
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
               onCellHover={handleCellHover}
-              onInputFocus={input => setFocusedInput(input)}
-              onInputBlur={() => setFocusedInput(null)}
+              onInputFocus={handleInputFocus}
+              onInputBlur={handleInputBlur}
             />
           ))}
         </div>
       </div>
     </div>
   );
-}
+});
 
 export default Table;
 
