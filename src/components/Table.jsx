@@ -122,14 +122,11 @@ function Table() {
     };
   }, [selectedCells]);
 
-  const handleCopy = useCallback(async (e) => {
-    if (!(e.ctrlKey || e.metaKey) || e.key !== 'c') return;
-    if (Object.keys(selectedCells).length === 0) return;
+  const copySelectedCells = useCallback(async () => {
+    if (Object.keys(selectedCells).length === 0) return null;
 
     const range = getSelectedRange();
-    if (!range) return;
-
-    e.preventDefault();
+    if (!range) return null;
 
     const matrix = [];
     for (let i = range.startRow; i <= range.endRow; i++) {
@@ -141,17 +138,52 @@ function Table() {
       matrix.push(row);
     }
 
- 
-
     const clipboardText = matrix.map(row => row.join('\t')).join('\n');
+    return { clipboardText, range, matrix };
+  }, [selectedCells, getSelectedRange]);
+
+
+
+  const handleCut = useCallback(async (e) => {
+    if (!(e.ctrlKey || e.metaKey) || e.key !== 'x') return;
+    
+    e.preventDefault();
+    const copyData = await copySelectedCells();
+    if (!copyData) return;
     
     try {
-      await navigator.clipboard.writeText(clipboardText);
+      await navigator.clipboard.writeText(copyData.clipboardText);
+      
+      setRows(prevRows => {
+        const newRows = [...prevRows];
+        for (let i = copyData.range.startRow; i <= copyData.range.endRow; i++) {
+          for (let j = copyData.range.startCol; j <= copyData.range.endCol; j++) {
+            newRows[i].cells[j] = '';
+          }
+        }
+        return newRows;
+      });
+      
+      console.log('Cut to clipboard');
+    } catch (err) {
+      console.error('Failed to cut to clipboard:', err);
+    }
+  }, [copySelectedCells]);
+
+  const handleCopy = useCallback(async (e) => {
+    if (!(e.ctrlKey || e.metaKey) || e.key !== 'c') return;
+    
+    e.preventDefault();
+    const copyData = await copySelectedCells();
+    if (!copyData) return;
+    
+    try {
+      await navigator.clipboard.writeText(copyData.clipboardText);
       console.log('Copied to clipboard');
     } catch (err) {
       console.error('Failed to copy to clipboard:', err);
     }
-  }, [selectedCells, getSelectedRange]);
+  }, [copySelectedCells]);
 
   const handlePaste = useCallback(async (e) => {
     if (e.type === 'keydown' && (!(e.ctrlKey || e.metaKey) || e.key !== 'v')) {
@@ -231,6 +263,8 @@ function Table() {
     }
   }, [dragStartCell, headers]);
 
+
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (tableRef.current && !tableRef.current.contains(event.target)) {
@@ -238,10 +272,14 @@ function Table() {
       }
     };
 
+  
+
     const handleKeyDown = (e) => {
       if (e.ctrlKey || e.metaKey) {
         if (e.key === 'c') {
           handleCopy(e);
+        } else if (e.key === 'x') {
+          handleCut(e);
         } else if (e.key === 'v') {
           console.log('Paste key detected',rows)
           handlePaste(e);
@@ -300,7 +338,7 @@ function Table() {
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('paste', handlePaste);
     };
-  }, [handleCopy, handlePaste, rows, dragStartCell, headers.length]);
+  }, [handleCopy, handleCut, handlePaste, rows, dragStartCell, headers.length]);
 
   return (
     <div className="table-container" ref={tableRef}>
