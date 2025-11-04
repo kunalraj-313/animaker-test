@@ -3,29 +3,32 @@ import { useRef, memo, useCallback } from 'react';
 const TableCell = memo(function TableCell({ value, isSelected, isDragStart, onChange, onMouseDown, onMouseUp, onMouseEnter, onInputFocus, onInputBlur }) {
   const inputRef = useRef(null);
 
-  const handleDoubleClick = useCallback((e) => {
-    e.stopPropagation();
+
+  const handleContainerMouseDown = useCallback((e) => {
+
+    const targetTag = e.target && e.target.tagName ? e.target.tagName.toLowerCase() : '';
+
+    if (targetTag === 'input' && inputRef.current && !e.shiftKey) {
+      inputRef.current.dataset.allowFocus = 'true';
+      setTimeout(() => {
+        if (inputRef.current) delete inputRef.current.dataset.allowFocus;
+      }, 0);
+    }
+
+    onMouseDown(e);
+  }, [onMouseDown]);
+
+  const handleClick = useCallback((e) => {
+    if (e && e.shiftKey) return;
+
     if (inputRef.current) {
       inputRef.current.dataset.allowFocus = 'true';
       inputRef.current.focus();
       setTimeout(() => {
-        if (inputRef.current) {
-          delete inputRef.current.dataset.allowFocus;
-        }
+        if (inputRef.current) delete inputRef.current.dataset.allowFocus;
       }, 0);
     }
   }, []);
-
-  const handleContainerMouseDown = useCallback((e) => {
-    e.preventDefault();
-    const wasInputClick = e.target.tagName.toLowerCase() === 'input';
-    if (wasInputClick) {
-      if (inputRef.current) {
-        inputRef.current.blur();
-      }
-    }
-    onMouseDown(e);
-  }, [onMouseDown]);
 
   return (
     <div 
@@ -33,7 +36,7 @@ const TableCell = memo(function TableCell({ value, isSelected, isDragStart, onCh
       onMouseDown={handleContainerMouseDown}
       onMouseUp={onMouseUp}
       onMouseEnter={onMouseEnter}
-      onDoubleClick={handleDoubleClick}
+      onClick={handleClick}
     >
       <input
         onFocus={useCallback((e) => {
