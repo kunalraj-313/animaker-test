@@ -7,6 +7,7 @@ function Table() {
   const [headers, setHeaders] = useState(['Head 1', 'Head 2', 'Head 3', 'Head 4']);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedCells, setSelectedCells] = useState({});
+  const [focusedInput, setFocusedInput] = useState(null);
   const [rows, setRows] = useState([
     { id: 1, label: 'Label 1', cells: ['', '', '', ''] },
     { id: 2, label: 'Label 2', cells: ['', '', '', ''] },
@@ -43,7 +44,11 @@ function Table() {
   const [anchorCell, setAnchorCell] = useState(null);
 
   const handleDragStart = useCallback((rowIndex, cellIndex, e) => {
-    // If shift key is held, select range from anchor to this cell
+    if (focusedInput) {
+      focusedInput.blur();
+      setFocusedInput(null);
+    }
+
     if (e && e.shiftKey && anchorCell) {
       const startRow = Math.min(anchorCell.row, rowIndex);
       const endRow = Math.max(anchorCell.row, rowIndex);
@@ -75,7 +80,7 @@ function Table() {
         value: rows[rowIndex].cells[cellIndex],
       }
     });
-  }, [rows, anchorCell]);
+  }, [rows, anchorCell, focusedInput]);
 
   const handleDragEnd = useCallback(() => {
     setIsDragging(false);
@@ -84,6 +89,11 @@ function Table() {
 
   const handleCellHover = useCallback((rowIndex, cellIndex) => {
     if (isDragging && dragStartCell) {
+      if (focusedInput) {
+        focusedInput.blur();
+        setFocusedInput(null);
+      }
+
       setSelectedCells(() => {
         const next = {};
         const startRow = Math.min(dragStartCell.row, rowIndex);
@@ -105,7 +115,7 @@ function Table() {
         return next;
       });
     }
-  }, [isDragging, dragStartCell, rows]);
+  }, [isDragging, dragStartCell, rows, focusedInput]);
 
   const getSelectedRange = useCallback(() => {
     if (Object.keys(selectedCells).length === 0) return null;
@@ -323,6 +333,10 @@ function Table() {
         }
 
         if (newRow !== dragStartCell.row || newCol !== dragStartCell.col) {
+          if (focusedInput) {
+            focusedInput.blur();
+            setFocusedInput(null);
+          }
           setDragStartCell({ row: newRow, col: newCol });
           setSelectedCells({ [`${newRow}-${newCol}`]: { row: newRow, col: newCol, value: rows[newRow].cells[newCol] } });
         }
@@ -338,7 +352,7 @@ function Table() {
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('paste', handlePaste);
     };
-  }, [handleCopy, handleCut, handlePaste, rows, dragStartCell, headers.length]);
+  }, [handleCopy, handleCut, handlePaste, rows, dragStartCell, headers.length, focusedInput]);
 
   return (
     <div className="table-container" ref={tableRef}>
@@ -358,6 +372,8 @@ function Table() {
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
               onCellHover={handleCellHover}
+              onInputFocus={input => setFocusedInput(input)}
+              onInputBlur={() => setFocusedInput(null)}
             />
           ))}
         </div>

@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 
-function TableCell({ value, isSelected, isDragStart, onChange, onMouseDown, onMouseUp, onMouseEnter }) {
+function TableCell({ value, isSelected, isDragStart, onChange, onMouseDown, onMouseUp, onMouseEnter, onInputFocus, onInputBlur }) {
   const inputRef = useRef(null);
 
   const handleDoubleClick = (e) => {
@@ -39,8 +39,11 @@ function TableCell({ value, isSelected, isDragStart, onChange, onMouseDown, onMo
         onFocus={(e) => {
           if (!e.target.dataset.allowFocus) {
             e.target.blur();
+          } else {
+            onInputFocus?.(inputRef.current);
           }
         }}
+        onBlur={() => onInputBlur?.(inputRef.current)}
         ref={inputRef}
         type="text"
         value={value}
