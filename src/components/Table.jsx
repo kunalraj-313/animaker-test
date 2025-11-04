@@ -23,10 +23,11 @@ const Table = memo(function Table() {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
-      if (parsed?.headers) setHeaders(parsed.headers);
-      if (parsed?.rows) setRows(parsed.rows);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.headers) setHeaders(parsed.headers);
+        if (parsed?.rows) setRows(parsed.rows);
+      }
     // mark hydrated on next tick so we don't overwrite storage during initial mount
     } catch {
       /* ignore parse/storage errors */
